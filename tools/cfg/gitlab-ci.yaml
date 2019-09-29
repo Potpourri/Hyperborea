@@ -1,4 +1,4 @@
-image: registry.gitlab.com/potpourri1/shlib
+image: registry.gitlab.com/potpourri1/hyperborea
 
 stages:
   - commit-lint
