@@ -1,0 +1,30 @@
+policies:
+  - type: commit
+    spec:
+      headerLength: 70
+      dco: false
+      gpg: false
+      imperative: true
+      maximumOfOneCommit: true
+      requireCommitBody: false
+      conventional:
+        types:
+          - build
+          - ci
+          - chore
+          - docs
+          - perf
+          - refactor
+          - revert
+          - style
+          - test
+        scopes:
+          - apcselftest
+          - bash-bundler
+          - dotfiles-scripts
+          - git-scripts
+          - hyperborea
+          - media-scripts
+          - nix-shell2docker
+          - shlib
+          - update-pinned-nixpkgs

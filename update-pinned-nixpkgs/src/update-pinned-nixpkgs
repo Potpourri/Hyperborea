@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.panic.bash
+source potpourri.shlib.bool.bash
+source potpourri.shlib.console.success.bash
+source potpourri.shlib.console.info.bash
+source potpourri.shlib.assert.program_exist.bash
+source mclarkson.jsonpath.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="0.1.2
+Release date: 29 September 2019"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  update-pinned-nixpkgs [--only-nixpkgs|--only-overlay]
+  update-pinned-nixpkgs --version
+  update-pinned-nixpkgs -h | --help
+Without option update both nixpkgs and nixpkgs`s overlay.
+
+Options:
+  --only-nixpkgs  Update only pinned version of nixpkgs.
+  --only-overlay  Update only pinned version of nixpkgs`s overlay.
+  --version       Show version.
+  -h --help       Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/update-pinned-nixpkgs'
+
+main() {
+	local update_nixpkgs=$shlib_TRUE
+	local update_overlay=$shlib_TRUE
+	local __only_nixpkgs __only_overlay old_rev new_rev
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+	[[ $__only_nixpkgs == true ]] && update_overlay=$shlib_FALSE
+	[[ $__only_overlay == true ]] && update_nixpkgs=$shlib_FALSE
+
+	shlib.assert.program_exist nix-prefetch-git
+	if [[ -z ${PROJECT_ROOT:-} ]]; then
+		shlib.panic msg="This script must be run in lorri\nix-shell project with setted \$PROJECT_ROOT!"
+	fi
+
+	local nixpkgs_json=${MY_NIXPKGS_JSON:-$PROJECT_ROOT/tools/cfg/nix/nixpkgs-version.json}
+	local overlay_json=${MY_OVERLAY_JSON:-$PROJECT_ROOT/tools/cfg/nix/overlay-version.json}
+	mkdir -p "${nixpkgs_json%/*}"
+	mkdir -p "${overlay_json%/*}"
+
+	if ((update_nixpkgs)); then
+		old_rev=''
+		if [[ -f $nixpkgs_json ]]; then
+			old_rev=$(jsonpath -f "$nixpkgs_json" -b '$.rev')
+		fi
+		nix-prefetch-git "${MY_NIXPKGS_URL:?}" "refs/heads/${MY_NIXPKGS_REF:?}" >"$nixpkgs_json"
+		new_rev=$(jsonpath -f "$nixpkgs_json" -b '$.rev')
+		if [[ $new_rev != "$old_rev" ]]; then
+			shlib.console.success "Nixpkgs updated."
+		else
+			shlib.console.info "Nixpkgs already updated."
+		fi
+		echo
+	fi
+	if ((update_overlay)); then
+		old_rev=''
+		if [[ -f $overlay_json ]]; then
+			old_rev=$(jsonpath -f "$overlay_json" -b '$.rev')
+		fi
+		nix-prefetch-git "${MY_OVERLAY_URL:?}" "refs/heads/${MY_OVERLAY_REF:?}" >"$overlay_json"
+		new_rev=$(jsonpath -f "$overlay_json" -b '$.rev')
+		if [[ $new_rev != "$old_rev" ]]; then
+			shlib.console.success "Overlay updated."
+		else
+			shlib.console.info "Overlay already updated."
+		fi
+	fi
+}
+
+main "$@"

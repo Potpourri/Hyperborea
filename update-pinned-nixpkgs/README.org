@@ -1,0 +1,6 @@
+#+STARTUP: showall
+* update-pinned-nixpkgs
+
+** License
+
+[[../LICENSE][MIT]]

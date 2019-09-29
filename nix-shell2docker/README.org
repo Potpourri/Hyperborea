@@ -1,0 +1,6 @@
+#+STARTUP: showall
+* nix-shell2docker
+
+** License
+
+[[../LICENSE][MIT]]

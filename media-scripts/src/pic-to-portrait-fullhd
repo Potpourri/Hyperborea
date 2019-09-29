@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+# jscpd:ignore-start
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.assert.is_user.bash
+source potpourri.shlib.assert.program_exist.bash
+source potpourri.shlib.assert.file_exist.bash
+source potpourri.medialib.globalvar.bash
+# jscpd:ignore-end
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="$VERSION
+Release date: $RELEASE_DATE"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  pic-to-portrait-fullhd -p <src_pic> -g <gravity> <dest_pic>
+  pic-to-portrait-fullhd --version
+  pic-to-portrait-fullhd -h | --help
+
+Options:
+  -i <src_pic>  Input picture.
+  -g <gravity>  Gravity: NorthWest, North, NorthEast, West, Center,
+                East, SouthWest, South, SouthEast.
+  --version     Show version.
+  -h --help     Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/media-scripts'
+
+main() {
+	local _src_pic_ _gravity_ _dest_pic_
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+
+	shlib.assert.is_user
+	shlib.assert.program_exist convert
+	shlib.assert.file_exist "$_src_pic_"
+
+	convert "$_src_pic_" -resize 1080x1920^ -gravity "$_gravity_" -extent 1080x1920 "$_dest_pic_"
+}
+
+main "$@"

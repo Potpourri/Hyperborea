@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.panic.bash
+source potpourri.shlib.console.success.bash
+source potpourri.shlib.assert.program_exist.bash
+source potpourri.shlib.assert.file_exist.bash
+source potpourri.medialib.globalvar.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="$VERSION
+Release date: $RELEASE_DATE"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  pic-is-portrait-fullhd <pic>
+  pic-is-portrait-fullhd --version
+  pic-is-portrait-fullhd -h | --help
+
+Options:
+  --version  Show version.
+  -h --help  Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/media-scripts'
+
+main() {
+	local _pic_ size
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+
+	shlib.assert.program_exist identify
+	shlib.assert.file_exist "$_pic_"
+
+	size=$(identify -ping -format '%[w]x%[h]' "$_pic_")
+	if [[ $size == 1080x1920 ]]; then
+		shlib.console.success "$_pic_ is portrait FullHD."
+	else
+		shlib.panic msg="$_pic_ is not portrait FullHD: $size!"
+	fi
+}
+
+main "$@"

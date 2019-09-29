@@ -1,0 +1,30 @@
+image: registry.gitlab.com/potpourri1/shlib
+
+stages:
+  - commit-lint
+  - build
+  - test
+  - static-analysis
+  - style-lint
+
+commit-lint:
+  stage: commit-lint
+  script:
+    - git fetch origin master:master --depth 50
+    - nix-shell --run commit-lint
+
+build:
+  stage: build
+  script: nix-shell --command 'makeall clean build && check-all-committed'
+
+test:
+  stage: test
+  script: nix-shell --command 'makeall test'
+
+static-analysis:
+  stage: static-analysis
+  script: nix-shell --run static-analysis
+
+style-lint:
+  stage: style-lint
+  script: nix-shell --run style-lint

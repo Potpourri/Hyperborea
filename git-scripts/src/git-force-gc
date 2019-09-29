@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.assert.is_user.bash
+source potpourri.shlib.assert.program_exist.bash
+source potpourri.gitlib.globalvar.bash
+source potpourri.gitlib.cd_gitroot.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="$VERSION
+Release date: $RELEASE_DATE"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  git-force-gc
+  git-force-gc --version
+  git-force-gc -h | --help
+
+Options:
+  --version  Show version.
+  -h --help  Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/git-scripts'
+
+main() {
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+
+	shlib.assert.is_user
+	shlib.assert.program_exist git
+	gitlib.cd_gitroot
+
+	du -sh .git
+	git count-objects -v
+	echo
+
+	rm -rfv \
+		.git/refs/original/ \
+		.git/*_HEAD \
+		.git/logs/
+	git for-each-ref --format='%(refname)' refs/original/ |
+		xargs -n1 --no-run-if-empty git update-ref -d
+	git -c gc.reflogExpire=0 \
+		-c gc.reflogExpireUnreachable=0 \
+		-c gc.reReReResolved=0 \
+		-c gc.reReReUnresolved=0 \
+		-c gc.pruneExpire=now \
+		gc
+	echo
+
+	du -sh .git
+	git count-objects -v
+}
+
+main "$@"

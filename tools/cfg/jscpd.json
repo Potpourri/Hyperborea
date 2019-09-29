@@ -1,0 +1,11 @@
+{
+	"minLines": 3,
+	"minTokens": 30,
+	"threshold": 0,
+	"reporters": ["consoleFull"],
+	"absolute": true,
+	"format": ["bash"],
+	"formatsExts": {
+		"bash": ["", "bash", "sh"]
+	}
+}

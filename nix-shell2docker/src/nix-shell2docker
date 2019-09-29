@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.assert.program_exist.bash
+source potpourri.shlib.sys.get_real_scriptdir.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="0.0.1
+Release date: 29 September 2019"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  nix-shell2docker build
+  nix-shell2docker run [--] [<docker-run-args>...]
+  nix-shell2docker push
+  nix-shell2docker --version
+  nix-shell2docker -h | --help
+
+Options:
+  --version  Show version.
+  -h --help  Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/nix-shell2docker'
+
+declare -r DOCKER_REGISTRY_URL=${DOCKER_REGISTRY_URL:+$DOCKER_REGISTRY_URL/}
+declare tmp
+tmp=${PROJECT_ROOT:?}
+tmp=${PROJECT_ROOT##*/}
+tmp=${tmp,,}
+declare -r PROJECT_NAME=${PROJECT_NAME:-$tmp}
+unset -v tmp
+declare -r IMAGE="$DOCKER_REGISTRY_URL${DOCKER_REGISTRY_USER:?}/$PROJECT_NAME"
+declare -r NIX_VERSION=${NIX_VERSION:-2.2.1}
+
+build() {
+	local tmpDir dockerfile
+
+	tmpDir=$(mktemp -d)
+	cd "$PROJECT_ROOT"
+
+	dockerfile="$(shlib.sys.get_real_scriptdir)/../share/nix-shell2docker/Dockerfile"
+	cp -r "$dockerfile" shell.nix tools/cfg/nix/ "$tmpDir"
+	mkdir -p tools/log
+	docker build --tag "$IMAGE" \
+		--build-arg NIX_VERSION="$NIX_VERSION" \
+		"$tmpDir" |&
+		tee tools/log/docker-build.log
+
+	rm -r "$tmpDir"
+}
+
+run() {
+	docker run --interactive \
+		--tty \
+		--rm \
+		"$IMAGE" \
+		"$@"
+}
+
+push() {
+	docker login --username "$DOCKER_REGISTRY_USER" "$DOCKER_REGISTRY_URL"
+	docker push "$IMAGE"
+}
+
+main() {
+	local build run _docker_run_args_ push
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+
+	shlib.assert.program_exist docker
+
+	if [[ $build == true ]]; then
+		build
+	elif [[ $run == true ]]; then
+		run "${_docker_run_args_[@]}"
+	elif [[ $push == true ]]; then
+		push
+	fi
+}
+
+main "$@"

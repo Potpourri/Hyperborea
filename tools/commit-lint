@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.bool.bash
+source potpourri.shlib.console.info.bash
+source potpourri.shlib.console.success.bash
+
+main() {
+	local -i exitCode=0
+	local hasMisspell=$shlib_FALSE
+
+	cd "${PROJECT_ROOT:?}"
+
+	shlib.console.info "Conform stage."
+	cp tools/cfg/conform.yaml .conform.yaml
+	conform enforce || exitCode=$?
+	rm .conform.yaml
+	if [[ $exitCode == 0 ]]; then
+		shlib.console.success "Conform stage complete."
+	fi
+
+	shlib.console.info "cSpell check commit."
+	git log -1 --summary --format='%D%+B' >/tmp/commit.txt
+	cspell --config tools/cfg/cspell.json --root /tmp commit.txt || {
+		exitCode=$?
+		hasMisspell=$shlib_TRUE
+	}
+	if [[ $exitCode == 0 ]]; then
+		shlib.console.success "cSpell check commit complete."
+	elif ((hasMisspell)); then
+		cspell check --config tools/cfg/cspell.json /tmp/commit.txt || exitCode=$?
+	fi
+	rm /tmp/commit.txt
+
+	exit "$exitCode"
+}
+
+main

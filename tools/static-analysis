@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.console.info.bash
+source potpourri.shlib.console.success.bash
+
+main() {
+	local -i exitCode=0
+
+	cd "${PROJECT_ROOT:?}"
+
+	shlib.console.info "Shellcheck stage."
+	makeall static-analysis || exitCode=$?
+	shlib.console.info "Shellcheck check 'tools'."
+	find tools -maxdepth 1 -type f -exec \
+		shellcheck --check-sourced --external-sources {} + || exitCode=$?
+	if [[ $exitCode == 0 ]]; then
+		shlib.console.success "Shellcheck stage complete."
+	fi
+
+	shlib.console.info "Jscpd stage."
+	jscpd --config tools/cfg/jscpd.json \
+		"$PWD/apcselftest/src" \
+		"$PWD/bash-bundler/src" \
+		"$PWD/dotfiles-scripts/src" \
+		"$PWD/git-scripts/src" \
+		"$PWD/media-scripts/src" \
+		"$PWD/nix-shell2docker/src" \
+		"$PWD/shlib/src" \
+		"$PWD/tools" \
+		"$PWD/update-pinned-nixpkgs/src" || exitCode=$?
+	if [[ $exitCode == 0 ]]; then
+		shlib.console.success "Jscpd stage complete."
+	fi
+
+	exit "$exitCode"
+}
+
+main

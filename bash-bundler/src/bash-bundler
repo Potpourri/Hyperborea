@@ -1,0 +1,172 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.console.success.bash
+source potpourri.shlib.assert.file_exist.bash
+source potpourri.shlib.str.split.bash
+source potpourri.shlib.array.includes.bash
+source potpourri.shlib.array.pop.bash
+source potpourri.shlib.path.resolve.bash
+source potpourri.shlib.path.prettify.bash
+source potpourri.shlib.io.readline.bash
+source potpourri.shlib.time.get_ns.bash
+source potpourri.shlib.time.diff_ms.bash
+source potpourri.shlib.util.find_in_path.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="0.0.1
+Release date: 29 September 2019"
+# shellcheck disable=SC2034,SC2016
+declare -r DOC='Usage:
+  bash-bundler [-p <paths>] [--debug] <src> <bundle>
+  bash-bundler --version
+  bash-bundler -h | --help
+
+Options:
+  -p <paths> --path=<paths>  PATH-like list of paths to search source scripts,
+                             by default uses $BASH_LIB_PATH or $PATH if unset.
+  --debug                    Add header and footer foreach sourced script.
+  -v --version               Show version.
+  -h --help                  Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/bash-bundler'
+
+declare BASH_LIB_PATH=${BASH_LIB_PATH:-}
+declare DEBUG=$shlib_FALSE
+declare BUNDLE_PRETTY_PATH=''
+declare -r BR="################################################################################"
+
+strip_directives() {
+	local -r file=$1
+	local -r regexJscpd='^[[:blank:]]*#[[:blank:]]*jscpd:'
+	local -r regexShellcheck='^[[:blank:]]*#[[:blank:]]*shellcheck[[:blank:]]'
+	local -r regexCspell='^[[:blank:]]*#[[:blank:]]*(cspell|cSpell|spellchecker|spell-checker):'
+
+	sed -i -e "/$regexJscpd/d" \
+		-e "/$regexShellcheck/d" \
+		-e "/$regexCspell/d" \
+		"$file"
+}
+
+write_header() {
+	local -r file=$1
+	local -r path=$2
+
+	if ((DEBUG)); then
+		echo "$BR" >>"$file"
+		echo "# BEGIN script $path" >>"$file"
+	fi
+}
+
+write_footer() {
+	local -r file=$1
+	local -r path=$2
+
+	if ((DEBUG)); then
+		echo "# END script $path" >>"$file"
+		echo "$BR" >>"$file"
+	fi
+}
+
+inline_rec() {
+	local -n inliningStackRef=$1
+	local -n inlinedSourceRef=$2
+	local -r tmpFile=$3
+	local -r isMainScript=$4
+	local -r path=$5
+	local -r regexSource='^[[:blank:]]*(\.|source)[[:blank:]]+.+'
+	local -r regexShebang='^#!.+'
+	local -i lineNo=0
+	local isHeaderWritten=$shlib_FALSE
+	local line
+
+	# shellcheck disable=SC2094
+	while line=$(shlib.io.readline); do
+		((++lineNo))
+		if [[ $line =~ $regexSource ]]; then
+			local -a result=()
+			shlib.str.split "$line" ' ' result
+			local file=${result[1]}
+			local newPath
+			if ! newPath=$(shlib.util.find_in_path "$file" "$BASH_LIB_PATH"); then
+				shlib.panic msg="$BUNDLE_PRETTY_PATH:$lineNo: sourced script '$file' not found!"
+			fi
+			if ! shlib.array.includes "${inlinedSourceRef[@]}" "$newPath"; then
+				if [[ $newPath == "$path" ]]; then
+					shlib.panic msg="$BUNDLE_PRETTY_PATH:$lineNo: script '$path' self-sourced!"
+				fi
+				if shlib.array.includes "${inliningStackRef[@]}" "$newPath"; then
+					shlib.panic msg="$BUNDLE_PRETTY_PATH:$lineNo: script '$newPath' has cyclic dependency!"
+				fi
+				local firstLine
+				firstLine=$(shlib.io.readline <"$newPath")
+				if [[ $firstLine =~ $regexShebang ]]; then
+					shlib.panic msg="$BUNDLE_PRETTY_PATH:$lineNo: sourced script '$newPath' contains shebang!"
+				fi
+				if grep -qE "$regexSource" "$newPath"; then
+					inliningStackRef+=("$newPath")
+					inline_rec "$1" "$2" "$tmpFile" "$shlib_FALSE" "$newPath"
+					shlib.array.pop inliningStackRef
+				else
+					write_header "$tmpFile" "$newPath"
+					cat "$newPath" >>"$tmpFile"
+					write_footer "$tmpFile" "$newPath"
+				fi
+				inlinedSourceRef+=("$newPath")
+			fi
+		else
+			# write header after inlined scripts and before first non-source command
+			if ((!isMainScript && (!isHeaderWritten || lineNo == 1))); then
+				write_header "$tmpFile" "$path"
+				isHeaderWritten=$shlib_TRUE
+			fi
+			echo "$line" >>"$tmpFile"
+		fi
+	done <"$path"
+	if ((!isMainScript)); then
+		write_footer "$tmpFile" "$path"
+	fi
+}
+
+inline_aux() {
+	local -r bundle=$1
+	# shellcheck disable=SC2034
+	local -a inliningStack inlinedSource
+	local tmpFile
+
+	tmpFile=$(mktemp)
+	inline_rec inliningStack inlinedSource "$tmpFile" "$shlib_TRUE" "$bundle"
+	strip_directives "$tmpFile"
+	cp "$tmpFile" "$bundle"
+	rm "$tmpFile"
+}
+
+main() {
+	local -i timeStart
+	local _src_ _bundle_ __path __debug timeDiff
+
+	timeStart=$(shlib.time.get_ns)
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+	[[ $__debug == true ]] && DEBUG=$shlib_TRUE
+	BUNDLE_PRETTY_PATH=$(shlib.path.resolve "$_bundle_")
+	BUNDLE_PRETTY_PATH=$(shlib.path.prettify "$BUNDLE_PRETTY_PATH")
+	if [[ -n $__path ]]; then
+		BASH_LIB_PATH=$__path
+	fi
+
+	shlib.assert.file_exist "$_src_"
+
+	cp "$_src_" "$_bundle_"
+	inline_aux "$_bundle_"
+
+	timeDiff=$(shlib.time.diff_ms "$timeStart" "$(shlib.time.get_ns)")
+	shlib.console.success "Script '$BUNDLE_PRETTY_PATH' bundled at ${timeDiff}s."
+}
+
+main "$@"

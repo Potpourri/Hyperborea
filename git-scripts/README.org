@@ -1,0 +1,6 @@
+#+STARTUP: showall
+* git-scripts
+
+** License
+
+[[../LICENSE][MIT]]

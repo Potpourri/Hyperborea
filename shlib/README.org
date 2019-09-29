@@ -1,0 +1,15 @@
+#+STARTUP: showall
+* potpourri.shlib
+
+** Overview
+
+Bash micro-module library.
+
+** Install
+
+First install [[https://nixos.org/nix/][Nix]], then add [[https://github.com/Potpourri/dotfiles/blob/master/nixos/nixpkgs/overlays/potpourri-overlay.nix][my overlay]] and add package =bashPackages.potpourri_shlib= to dependencies
+in your =default.nix=.
+
+** License
+
+[[../LICENSE][MIT]]

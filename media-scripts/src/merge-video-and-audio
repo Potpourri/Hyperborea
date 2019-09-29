@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+# jscpd:ignore-start
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.assert.is_user.bash
+source potpourri.shlib.assert.program_exist.bash
+source potpourri.shlib.assert.file_exist.bash
+source potpourri.medialib.globalvar.bash
+# jscpd:ignore-end
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="$VERSION
+Release date: $RELEASE_DATE"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  merge-video-and-audio -v <src_video> -a <src_audio> <dest_video>
+  merge-video-and-audio --version
+  merge-video-and-audio -h | --help
+
+Options:
+  -v <src_video>  Input video.
+  -a <src_audio>  Input audio.
+  --version       Show version.
+  -h --help       Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/media-scripts'
+
+main() {
+	local _src_video_ _src_audio_ _dest_video_
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+
+	shlib.assert.is_user
+	shlib.assert.program_exist ffmpeg
+	shlib.assert.file_exist "$_src_video_"
+	shlib.assert.file_exist "$_src_audio_"
+
+	ffmpeg -i "$_src_video_" -i "$_src_audio_" -vcodec copy -acodec copy "$_dest_video_"
+}
+
+main "$@"

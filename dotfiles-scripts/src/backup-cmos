@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.console.success.bash
+source potpourri.shlib.assert.is_root.bash
+source potpourri.dotfileslib.globalvar.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="$VERSION
+Release date: $RELEASE_DATE"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  backup-cmos backup
+  backup-cmos restore
+  backup-cmos --version
+  backup-cmos -h | --help
+
+Options:
+  --version  Show version.
+  -h --help  Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/dotfiles-scripts'
+
+backup() {
+	cat /dev/nvram >"$DOTFILES_ROOT/bios/cmos.bin"
+	shlib.console.success "CMOS stored in 'dotfiles/bios/cmos.bin'."
+}
+
+restore() {
+	cat "$DOTFILES_ROOT/bios/cmos.bin" >/dev/nvram
+	cat /proc/driver/nvram
+	shlib.console.success "CMOS restored."
+}
+
+main() {
+	local backup restore
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+
+	shlib.assert.is_root
+
+	if [[ $backup == true ]]; then
+		backup
+	elif [[ $restore == true ]]; then
+		restore
+	fi
+}
+
+main "$@"

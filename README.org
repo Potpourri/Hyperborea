@@ -1,0 +1,37 @@
+#+STARTUP: showall
+* Hyperborea
+
+** Overview
+
+Monorepo for my Bash packages.
+
+** Packages
+
+- [[apcselftest/][apcselftest]]
+- [[bash-bundler/][bash-bundler]]
+- [[dotfiles-scripts/][dotfiles-scripts]]
+- [[git-scripts/][git-scripts]]
+- [[media-scripts/][media-scripts]]
+- [[nix-shell2docker/][nix-shell2docker]]
+- [[shlib/][potpourri.shlib]]
+- [[update-pinned-nixpkgs/][update-pinned-nixpkgs]]
+
+** Uses these awesome tools
+
+- [[https://builtwithnix.org][https://builtwithnix.org/badge.svg]]
+- [[https://github.com/target/lorri][lorri]]
+- [[https://github.com/direnv/direnv][direnv]]
+- [[https://www.docker.com/][Docker]]
+- [[https://about.gitlab.com/product/continuous-integration/][GitLab CI]]
+- [[https://github.com/talos-systems/conform][Conform]]
+- [[https://github.com/bats-core/bats-core][Bats]]
+- [[https://tracker.debian.org/pkg/fakeroot][fakeroot]]
+- [[https://github.com/SimonKagstrom/kcov][kcov]]
+- [[https://github.com/koalaman/shellcheck][ShellCheck]]
+- [[https://github.com/mvdan/sh][shfmt]]
+- [[https://github.com/kucherenko/jscpd][jscpd]]
+- [[https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell][cspell]]
+
+** License
+
+[[./LICENSE][MIT]]

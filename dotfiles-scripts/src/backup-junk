@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.console.info.bash
+source potpourri.shlib.bool.bash
+source potpourri.shlib.assert.is_user.bash
+source potpourri.shlib.assert.program_exist.bash
+source potpourri.dotfileslib.globalvar.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="$VERSION
+Release date: $RELEASE_DATE"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  backup-junk [--vms]
+  backup-junk --version
+  backup-junk -h | --help
+
+Options:
+  --vms      Include VirtualBox VMs to backup.
+  --version  Show version.
+  -h --help  Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/dotfiles-scripts'
+
+sync() {
+	local -r cloud=$1
+	local -r includeVms=$2
+
+	if [[ $cloud == mailrucloud ]]; then
+		shlib.console.info "Mounting mailrucloud"
+		marcfs /cloud/mailrucloud
+		shlib.console.info "Syncing mailrucloud"
+		rsync -av --delete --size-only backup-junk /cloud/mailrucloud
+		if ((includeVms)); then
+			shlib.console.info "Syncing mailrucloud: VirtualBox VMs"
+			rsync -av --delete --size-only "$VIRTUALBOX_VM_DIR" /cloud/mailrucloud
+		fi
+		shlib.console.info "Unmounting mailrucloud"
+		fusermount -u /cloud/mailrucloud
+	else
+		shlib.console.info "Mounting $cloud"
+		rclone sync --progress backup-junk "$cloud:/backup-junk"
+		if ((includeVms)); then
+			shlib.console.info "Syncing $cloud: VirtualBox VMs"
+			rclone sync --progress "$VIRTUALBOX_VM_DIR" "$cloud:/VirtualBox VMs"
+		fi
+	fi
+}
+
+main() {
+	local includeVms=$shlib_FALSE
+	local __vms
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+	[[ $__vms == true ]] && includeVms=$shlib_TRUE
+
+	shlib.assert.is_user
+	shlib.assert.program_exist rsync
+	shlib.assert.program_exist rclone
+	shlib.assert.program_exist marcfs
+
+	shlib.console.info "Creating /tmp/backup-junk/"
+	cd /tmp
+	mkdir backup-junk
+
+	# Eclipse Nix environment
+	mkdir backup-junk/eclipse
+	cp -v "$USER_HOME/Projects/eclipse/default.nix" backup-junk/eclipse/default.nix
+
+	# secrets repo
+	git clone "$DOTFILES_ROOT/secrets" backup-junk/secrets
+	gpgtar --encrypt backup-junk/secrets >backup-junk/secrets.tar.gpg
+	rm -rf backup-junk/secrets
+	if [[ -d backup-junk/secrets ]]; then
+		shlib.panic msg="Cannot remove dir '/tmp/backup-junk/secrets'!"
+	fi
+
+	sync mailrucloud "$includeVms"
+	sync yadisk "$includeVms"
+	sync gdrive "$includeVms"
+	sync meganz "$includeVms"
+
+	rm -rf backup-junk/
+}
+
+main "$@"

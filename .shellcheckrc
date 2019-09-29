@@ -1,0 +1,10 @@
+shell=bash
+
+# enable optional rules
+enable=add-default-case
+enable=avoid-nullary-conditions
+enable=check-unassigned-uppercase
+enable=quote-safe-variables
+
+# disable rule "Use cd ... || exit in case cd fails."
+disable=SC2164

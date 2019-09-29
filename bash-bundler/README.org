@@ -1,0 +1,6 @@
+#+STARTUP: showall
+* bash-bundler
+
+** License
+
+[[../LICENSE][MIT]]

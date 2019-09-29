@@ -1,0 +1,6 @@
+#+STARTUP: showall
+* dotfiles-scripts
+
+** License
+
+[[../LICENSE][MIT]]

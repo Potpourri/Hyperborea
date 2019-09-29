@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.assert.is_root.bash
+source potpourri.shlib.assert.program_exist.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="0.0.1
+Release date: 29 September 2019"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  apcselftest
+  apcselftest --version
+  apcselftest -h | --help
+
+Options:
+  --version  Show version.
+  -h --help  Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/apcselftest'
+
+main() {
+	local -r regex='/nix/store/[[:alnum:]]+-apcupsd\.conf'
+	local out
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+
+	shlib.assert.is_root
+	shlib.assert.program_exist apctest
+
+	cd /tmp
+	systemctl stop apcupsd
+	apctest -f "$(systemctl show apcupsd -p ExecStart --value | grep -Eo "$regex")"
+	rm apctest.output
+	systemctl start apcupsd
+	until out=$(apcaccess 2>/dev/null) && [[ $(wc -l <<<"$out") == 47 ]]; do
+		sleep 1
+	done
+	echo -e "\n$out"
+}
+
+main "$@"

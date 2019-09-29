@@ -1,0 +1,6 @@
+#+STARTUP: showall
+* apcselftest
+
+** License
+
+[[../LICENSE][MIT]]

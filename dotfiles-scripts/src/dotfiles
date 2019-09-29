@@ -1,0 +1,227 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.panic.bash
+source potpourri.shlib.console.success.bash
+source potpourri.shlib.assert.is_root.bash
+source potpourri.shlib.assert.is_user.bash
+source potpourri.dotfileslib.globalvar.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="$VERSION
+Release date: $RELEASE_DATE"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  dotfiles restore
+  dotfiles backup
+  dotfiles update
+  dotfiles --version
+  dotfiles -h | --help
+
+Options:
+  --version  Show version.
+  -h --help  Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/dotfiles-scripts'
+
+declare -r DOTFILES_PARENT=${DOTFILES_ROOT%/*}
+
+link() {
+	local -r linkTo=$1
+	local -r linkPath=$2
+	local -r linkDir=${linkPath%/*}
+
+	if [[ ! -e $linkTo ]]; then
+		shlib.panic msg="Symlink '$linkPath': target '$linkTo' not found!"
+	fi
+	if [[ $linkPath == "$USER_HOME"* ]]; then
+		sudo -u "$USER_NAME" mkdir -p "$linkDir"
+		sudo -u "$USER_NAME" ln -sf --no-dereference "$linkTo" "$linkPath"
+	else
+		mkdir -p "$linkDir"
+		ln -sf --no-dereference "$linkTo" "$linkPath"
+	fi
+	shlib.console.success "Created symlink: ${linkPath/#$USER_HOME/\~} → ${linkTo#DOTFILES_PARENT/}"
+}
+
+copy() {
+	local -r from=$1
+	local -r to=$2
+
+	if [[ $to == "$USER_HOME"* ]]; then
+		install -o "$USER_NAME" -g users -m 0644 -D "$from" "$to"
+	else
+		install -D "$from" "$to"
+	fi
+	if [[ $from == "$DOTFILES_ROOT"/* ]]; then
+		shlib.console.success "Copied: ${from#$DOTFILES_PARENT/} → ${to/#$USER_HOME/\~}"
+	else
+		shlib.console.success "Copied: ${from/#$USER_HOME/\~} → ${to#$DOTFILES_PARENT/}"
+	fi
+}
+
+nix_install() {
+	sudo -u "$USER_NAME" nix-env -iA nixos.passff-host
+}
+
+restore() {
+	shlib.assert.is_root
+
+	# install user-level packages
+	nix_install
+
+	# NixOS:
+	link \
+		"$DOTFILES_ROOT"/nixos/configuration.nix \
+		/etc/nixos/configuration.nix
+	link \
+		"$DOTFILES_ROOT"/nixos/nix-channels \
+		"$USER_HOME"/.nix-channels
+	link \
+		"$DOTFILES_ROOT"/nixos/nixpkgs/ \
+		"$USER_HOME"/.config/nixpkgs
+	# Spacemacs:
+	link \
+		"$DOTFILES_ROOT"/spacemacs/spacemacs \
+		"$USER_HOME"/.spacemacs
+	link \
+		"$DOTFILES_ROOT"/spacemacs/emacs.d/ \
+		"$USER_HOME"/.emacs.d
+	# XDG:
+	link \
+		"$DOTFILES_ROOT"/xdg/user-dirs.dirs \
+		"$USER_HOME"/.config/user-dirs.dirs
+	link \
+		"$DOTFILES_ROOT"/xdg/mimeapps.list \
+		"$USER_HOME"/.config/mimeapps.list
+	link \
+		"$DOTFILES_ROOT"/xdg/applications/emacsclient.desktop \
+		"$USER_HOME"/.local/share/applications/emacsclient.desktop
+	# GTK:
+	link \
+		"$DOTFILES_ROOT"/gtk/gtkrc-2.0 \
+		"$USER_HOME"/.gtkrc-2.0
+	link \
+		"$DOTFILES_ROOT"/gtk/gtk-3.0-settings.ini \
+		"$USER_HOME"/.config/gtk-3.0/settings.ini
+	# GnuPG:
+	link \
+		"$DOTFILES_ROOT"/gnupg/gpg-agent.conf \
+		"$USER_HOME"/.gnupg/gpg-agent.conf
+	link \
+		"$DOTFILES_ROOT"/gnupg/sshcontrol \
+		"$USER_HOME"/.gnupg/sshcontrol
+	link \
+		"$DOTFILES_ROOT"/gnupg/gpg.conf \
+		"$USER_HOME"/.gnupg/gpg.conf
+	# Git:
+	link \
+		"$DOTFILES_ROOT"/git/gitconfig \
+		"$USER_HOME"/.gitconfig
+	# git-annex:
+	link \
+		"$DOTFILES_ROOT"/git-annex/autostart \
+		"$USER_HOME"/.config/git-annex/autostart
+	# Udiskie:
+	link \
+		"$DOTFILES_ROOT"/udiskie/config.yml \
+		"$USER_HOME"/.config/udiskie/config.yml
+	# CUPS:
+	copy \
+		"$DOTFILES_ROOT"/cups/printers.conf \
+		/etc/cups/printers.conf
+	# ALSA:
+	copy \
+		"$DOTFILES_ROOT"/alsa/asound.state \
+		/var/lib/alsa/asound.state
+	# mpv:
+	link \
+		"$DOTFILES_ROOT"/mpv/mpv.conf \
+		"$USER_HOME"/.config/mpv/mpv.conf
+	# Firefox:
+	link \
+		"$DOTFILES_ROOT"/firefox/userContent.css \
+		"$USER_HOME"/.mozilla/firefox/"$FX_PROFILE"/chrome/userContent.css
+	link \
+		"$USER_HOME"/.nix-profile/share/passff-host/passff.json \
+		"$USER_HOME"/.mozilla/native-messaging-hosts/passff.json
+	# RetroArch:
+	link \
+		"$DOTFILES_ROOT"/retroarch/retroarch.cfg \
+		"$USER_HOME"/.config/retroarch/retroarch.cfg
+	# VirtualBox:
+	copy \
+		"$DOTFILES_ROOT"/virtualbox/VirtualBox.xml \
+		"$USER_HOME"/.config/VirtualBox/VirtualBox.xml
+}
+
+backup() {
+	shlib.assert.is_root
+
+	# VirtualBox:
+	copy \
+		"$USER_HOME"/.config/VirtualBox/VirtualBox.xml \
+		"$DOTFILES_ROOT"/virtualbox/VirtualBox.xml
+	# ALSA:
+	copy \
+		/var/lib/alsa/asound.state \
+		"$DOTFILES_ROOT"/alsa/asound.state
+	# CUPS:
+	copy \
+		/etc/cups/printers.conf \
+		"$DOTFILES_ROOT"/cups/printers.conf
+}
+
+update() {
+	shlib.assert.is_user
+
+	if [[ -n $(git status --porcelain --untracked-files=no --ignore-submodules) ]]; then
+		shlib.panic msg="'dotfiles' has uncommitted changes!"
+	fi
+
+	if [[ -n $(cd secrets && git status --porcelain) ]]; then
+		shlib.panic msg="'secrets' has uncommitted changes!"
+	fi
+
+	if git status --porcelain | grep -Eq ' secrets$'; then
+		shlib.console.info "Updating 'secrets' submodule"
+		gitlib.git_no_sign commit -am "Update 'secrets' submodule"
+	fi
+
+	shlib.console.info "Updating 'spacemacs/emacs.d' subtree"
+	gitlib.git_no_sign subtree pull --squash --prefix spacemacs/emacs.d spacemacs develop \
+		-m "Merge 'spacemacs/emacs.d' subtree"
+
+	shlib.console.info "Updating 'spacemacs/emacs.d/private/local/exwm' subtree"
+	gitlib.git_no_sign subtree pull --squash --prefix spacemacs/emacs.d/private/local/exwm \
+		spacemacs-os master -m "Merge 'spacemacs/emacs.d/private/local/exwm' subtree"
+
+	shlib.console.info "Updating 'spacemacs/emacs.d/private/local/media' subtree"
+	gitlib.git_no_sign subtree pull --squash --prefix spacemacs/emacs.d/private/local/media \
+		spacemacs-emms master -m "Merge 'spacemacs/emacs.d/private/local/media' subtree"
+
+	shlib.console.success "All subtree\submodules updated"
+}
+
+main() {
+	local restore backup update
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+
+	cd "$DOTFILES_ROOT"
+
+	if [[ $restore == true ]]; then
+		restore
+	elif [[ $backup == true ]]; then
+		backup
+	elif [[ $update == true ]]; then
+		update
+	fi
+}
+
+main "$@"
