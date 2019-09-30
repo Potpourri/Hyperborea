@@ -4,8 +4,9 @@
 	sudo -u '#1000' bash -c 'source potpourri.shlib.assert.is_user.bash && shlib.assert.is_user'
 }
 
-@test "assert.is_user: under root" {
+@test "assert.is_user: under root ; prints an error" {
 	run fakeroot bash -c 'source potpourri.shlib.assert.is_user.bash && shlib.assert.is_user'
+
 	[[ $status == 1 ]]
 	[[ $output == *"assert.is_user failed: This script must be run as regular user (non-root)!" ]]
 }
