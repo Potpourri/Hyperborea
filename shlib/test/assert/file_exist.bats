@@ -3,13 +3,13 @@
 @test "assert.file_exist: real file" {
 	source potpourri.shlib.assert.file_exist.bash
 
-	shlib.assert.file_exist test/fixtures/assert/file_exist/foo.txt
+	( shlib.assert.file_exist test/fixtures/assert/file_exist/foo.txt )
 }
 
 @test "assert.file_exist: symlink to real file" {
 	source potpourri.shlib.assert.file_exist.bash
 
-	shlib.assert.file_exist test/fixtures/assert/file_exist/foo1.txt
+	( shlib.assert.file_exist test/fixtures/assert/file_exist/foo1.txt )
 }
 
 @test "assert.file_exist: broken symlink ; prints an error" {
