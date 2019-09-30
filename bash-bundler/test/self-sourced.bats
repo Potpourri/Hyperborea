@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-@test "bash-bundler: script self-sourced" {
+@test "bash-bundler: script self-sourced ; prints an error" {
 	local -r outpath="$BATS_TMPDIR/main.bash"
 
 	run bin/bash-bundler \

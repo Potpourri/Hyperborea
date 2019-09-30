@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-@test "bash-bundler: sourced script contains shebang" {
+@test "bash-bundler: sourced script contains shebang ; prints an error" {
 	local -r outpath="$BATS_TMPDIR/main.bash"
 
 	run bin/bash-bundler \
