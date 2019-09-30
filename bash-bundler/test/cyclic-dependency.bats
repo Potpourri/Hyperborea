@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-@test "bash-bundler: script has cyclic dependency" {
+@test "bash-bundler: script has cyclic dependency ; prints an error" {
 	local -r outpath="$BATS_TMPDIR/main.bash"
 
 	run bin/bash-bundler \
