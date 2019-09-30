@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.panic.bash
+source potpourri.shlib.assert.is_user.bash
+source potpourri.shlib.assert.program_exist.bash
+source potpourri.gitlib.globalvar.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="$VERSION
+Release date: $RELEASE_DATE"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  git-prune-branches
+  git-prune-branches --version
+  git-prune-branches -h | --help
+
+Options:
+  --version  Show version.
+  -h --help  Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/git-scripts'
+
+main() {
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+
+	shlib.assert.is_user
+	shlib.assert.program_exist git
+
+	git branch --merged | grep -Ev '(^\*|master)' | xargs --no-run-if-empty git branch -d ||
+		if [[ ${PIPESTATUS[0]} != 0 || ${PIPESTATUS[2]} != 0 ]]; then
+			shlib.panic msg="pruning local branches!"
+		fi
+	git branch -r --merged | grep -v master | xargs --no-run-if-empty git branch -dr ||
+		if [[ ${PIPESTATUS[0]} != 0 || ${PIPESTATUS[2]} != 0 ]]; then
+			shlib.panic msg="pruning remote-tracking branches!"
+		fi
+}
+
+main "$@"
