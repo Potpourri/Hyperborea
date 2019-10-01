@@ -3522,6 +3522,60 @@ shlib.assert.is_user() {
 		shlib.panic msg="assert.is_user failed: This script must be run as regular user (non-root)!"
 	fi
 }
+shlib.sys.get_type() {
+	local -r name=$1
+	local type
+
+	if ! type=$(type -t "$name"); then
+		type="not_found"
+	fi
+	echo "$type"
+}
+
+shlib.sys.is_program() {
+	local -r name=$1
+
+	if [[ $(shlib.sys.get_type "$name") == file ]]; then
+		return 0
+	fi
+	return 1
+}
+
+shlib.assert.program_exist() {
+	local -r name=$1
+
+	if ! shlib.sys.is_program "$name"; then
+		bash -ic "type command_not_found_handle &>/dev/null && command_not_found_handle $name" || :
+		shlib.panic msg="assert.program_exist failed: Program '$name' not found!" exitCode=127
+	fi
+}
+
+gitlib.cd_gitroot() {
+	local gitDir
+
+	if ! gitDir=$(git rev-parse --git-dir 2>/dev/null); then
+		shlib.panic msg="This script must be run in git repo!"
+	fi
+	cd "${gitDir/%.git*/.}"
+}
+
+gitlib.assert_all_committed() (
+	gitlib.cd_gitroot
+
+	local -r repoName=${PWD##*/}
+	local -a gitArgs
+	for arg in "$@"; do
+		gitArgs+=("--$arg")
+	done
+
+	if [[ -n $(git status --porcelain "${gitArgs[@]}") ]]; then
+		git status --short "${gitArgs[@]}" >&2
+		shlib.panic msg="$repoName has uncommitted files!"
+	fi
+)
+gitlib.git_no_sign() {
+	git -c commit.gpgSign=false "$@"
+}
 
 declare -r VERSION="0.0.1"
 declare -r RELEASE_DATE="29 September 2019"
@@ -3780,14 +3834,14 @@ backup() {
 
 update() {
 	shlib.assert.is_user
+	shlib.assert.program_exist git
 
-	if [[ -n $(git status --porcelain --untracked-files=no --ignore-submodules) ]]; then
-		shlib.panic msg="'dotfiles' has uncommitted changes!"
-	fi
+	gitlib.assert_all_committed untracked-files=no ignore-submodules
 
-	if [[ -n $(cd secrets && git status --porcelain) ]]; then
-		shlib.panic msg="'secrets' has uncommitted changes!"
-	fi
+	(
+		cd secrets
+		gitlib.assert_all_committed
+	)
 
 	if git status --porcelain | grep -Eq ' secrets$'; then
 		shlib.console.info "Updating 'secrets' submodule"
