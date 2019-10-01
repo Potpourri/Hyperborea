@@ -82,6 +82,7 @@ stdenv.mkDerivation rec {
   shellHook = ''
     PATH+=":$BASH_LIB_PATH"
     PATH+=":$PROJECT_ROOT/bash-bundler/bin"
+    PATH+=":$PROJECT_ROOT/bashfnx/bin"
     PATH+=":$PROJECT_ROOT/tools"
     PATH+=":$PROJECT_ROOT/update-pinned-nixpkgs/bin"
     PATH+=":$PROJECT_ROOT/nix-shell2docker/bin"

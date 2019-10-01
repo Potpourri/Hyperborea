@@ -63,6 +63,7 @@
 		"unshift",
 		"untracked",
 		// my abbrevs:
+		"bashfnx",
 		"deps",
 		"deref",
 		"fullderef",

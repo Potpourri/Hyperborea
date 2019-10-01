@@ -21,6 +21,7 @@ policies:
         scopes:
           - apcselftest
           - bash-bundler
+          - bashfnx
           - dotfiles-scripts
           - git-scripts
           - hyperborea
