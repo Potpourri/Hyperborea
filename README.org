@@ -9,6 +9,7 @@ Monorepo for my Bash packages.
 
 - [[apcselftest/][apcselftest]]
 - [[bash-bundler/][bash-bundler]]
+- [[bashfnx/][bashfnx]]
 - [[dotfiles-scripts/][dotfiles-scripts]]
 - [[git-scripts/][git-scripts]]
 - [[media-scripts/][media-scripts]]

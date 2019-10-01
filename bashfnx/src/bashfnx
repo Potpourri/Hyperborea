@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -o errtrace -o nounset -o pipefail
+
+source potpourri.shlib.panic.__err_exit_trap__.bash
+source potpourri.shlib.panic.bash
+source potpourri.shlib.util.find_in_path.bash
+
+# shellcheck disable=SC2034
+declare -r DOCOPT_PROGRAM_VERSION="0.0.1
+Release date: 1 October 2019"
+# shellcheck disable=SC2034
+declare -r DOC='Usage:
+  bashfnx <script> [-f <func>] [<args>...]
+  bashfnx --version
+  bashfnx -h | --help
+
+Options:
+  -f <func>  Set function to call, default is script
+             name without first namespace part.
+  --version  Show version.
+  -h --help  Show this screen.
+
+Author: Nikita Belyakov "Potpourri"
+License: MIT
+Repo: https://github.com/Potpourri/Hyperborea/tree/master/bashfnx'
+
+main() {
+	local _script_ _f func
+	local -a _args_
+
+	set +o nounset
+	eval "$(docopt "$@")"
+	set -o nounset
+
+	if ! shlib.util.find_in_path "$_script_.bash" "${BASH_LIB_PATH:-}" >/dev/null; then
+		shlib.panic msg="script '$_script_' not found!"
+	fi
+	if [[ -n ${_f:-} ]]; then
+		func=$_f
+	else
+		func=${_script_#*.}
+	fi
+
+	# shellcheck source=/dev/null
+	source "$_script_.bash" # bash-bundler ignore
+	"$func" "${_args_[@]}"
+}
+
+main "$@"

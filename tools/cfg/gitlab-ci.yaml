@@ -15,7 +15,7 @@ commit-lint:
 
 build:
   stage: build
-  script: nix-shell --command 'makeall clean build && source potpourri.gitlib.assert_all_committed.bash && gitlib.assert_all_committed'
+  script: nix-shell --command 'makeall clean build && bashfnx potpourri.gitlib.assert_all_committed'
 
 test:
   stage: test

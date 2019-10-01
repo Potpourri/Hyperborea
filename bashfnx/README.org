@@ -1,0 +1,6 @@
+#+STARTUP: showall
+* bashfnx
+
+** License
+
+[[../LICENSE][MIT]]

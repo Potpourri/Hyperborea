@@ -6,6 +6,7 @@ source potpourri.shlib.panic.__err_exit_trap__.bash
 declare -a PROJECTS=(
 	bash-bundler
 	apcselftest
+	bashfnx
 	dotfiles-scripts
 	git-scripts
 	media-scripts

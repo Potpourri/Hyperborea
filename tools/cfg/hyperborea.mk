@@ -11,15 +11,13 @@ build/%.docopted: src/%
 	@mkdir -p build &&\
 	<$< docopt.sh --line-length 100 - >$@
 inject-docopt-parser: $(patsubst %,build/%.docopted,$(BIN_MODULES))
-	@source potpourri.shlib.console.success.bash &&\
-	shlib.console.success "Inject docopt.sh parser complete."
+	@bashfnx potpourri.shlib.console.success "Inject docopt.sh parser complete."
 
 # Bash-bundler stage:
 build/%.bundled: build/%.docopted $(LIB_MODULES) $(DEPS)
 	@$(BASH_BUNDLER) $< $@
 bundle: $(patsubst %,build/%.bundled,$(BIN_MODULES))
-	@source potpourri.shlib.console.success.bash &&\
-	shlib.console.success "Bundle complete."
+	@bashfnx potpourri.shlib.console.success "Bundle complete."
 
 # Final build stage:
 bin/%: build/%.bundled
@@ -27,8 +25,7 @@ bin/%: build/%.bundled
 	cp $< $@ &&\
 	chmod +x $@
 build: $(patsubst %,bin/%,$(BIN_MODULES))
-	@source potpourri.shlib.console.success.bash &&\
-	shlib.console.success "Build complete."
+	@bashfnx potpourri.shlib.console.success "Build complete."
 
 clean:
 	@$(RM) -r build/ bin/
@@ -50,8 +47,7 @@ static-analysis:
 	@shellcheck --check-sourced --external-sources \
 		$(patsubst %,src/%,$(BIN_MODULES)) \
 		$(filter-out $(SHELLCHECK_IGNORE),$(LIB_MODULES)) &&\
-	source potpourri.shlib.console.success.bash &&\
-	shlib.console.success "Static analysis complete."
+	bashfnx potpourri.shlib.console.success "Static analysis complete."
 
 style-lint:
 	@declare -i exitCode=0 ;\
@@ -61,8 +57,7 @@ style-lint:
 		$(LIB_MODULES) \
 		README.org || exitCode=$$? ;\
 	if [[ $$exitCode == 0 ]]; then \
-		source potpourri.shlib.console.success.bash &&\
-		shlib.console.success "Style linting complete." ;\
+		bashfnx potpourri.shlib.console.success "Style linting complete." ;\
 	else \
 		exit "$$exitCode" ;\
 	fi
