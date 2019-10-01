@@ -78,6 +78,7 @@ inline_rec() {
 	local -r isMainScript=$4
 	local -r path=$5
 	local -r regexSource='^[[:blank:]]*(\.|source)[[:blank:]]+.+'
+	local -r regexBashBundler='#[[:blank:]]*bash-bundler[[:blank:]]+ignore$'
 	local -r regexShebang='^#!.+'
 	local -i lineNo=0
 	local isHeaderWritten=$shlib_FALSE
@@ -86,7 +87,7 @@ inline_rec() {
 	# shellcheck disable=SC2094
 	while line=$(shlib.io.readline); do
 		((++lineNo))
-		if [[ $line =~ $regexSource ]]; then
+		if [[ $line =~ $regexSource && ! $line =~ $regexBashBundler ]]; then
 			local -a result=()
 			shlib.str.split "$line" ' ' result
 			local file=${result[1]}
