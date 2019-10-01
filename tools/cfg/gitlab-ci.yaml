@@ -2,20 +2,23 @@ image: registry.gitlab.com/potpourri1/hyperborea
 
 stages:
   - commit-lint
-  - build
+  - style-lint
   - test
   - static-analysis
-  - style-lint
 
 commit-lint:
   stage: commit-lint
   script:
     - git fetch origin master:master --depth 50
-    - nix-shell --run commit-lint
+    - >
+      nix-shell --command '
+        commit-lint &&
+        makeall clean build &&
+        bashfnx potpourri.gitlib.assert_all_committed'
 
-build:
-  stage: build
-  script: nix-shell --command 'makeall clean build && bashfnx potpourri.gitlib.assert_all_committed'
+style-lint:
+  stage: style-lint
+  script: nix-shell --run style-lint
 
 test:
   stage: test
@@ -24,7 +27,3 @@ test:
 static-analysis:
   stage: static-analysis
   script: nix-shell --run static-analysis
-
-style-lint:
-  stage: style-lint
-  script: nix-shell --run style-lint
