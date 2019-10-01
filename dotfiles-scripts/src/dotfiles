@@ -6,6 +6,9 @@ source potpourri.shlib.panic.bash
 source potpourri.shlib.console.success.bash
 source potpourri.shlib.assert.is_root.bash
 source potpourri.shlib.assert.is_user.bash
+source potpourri.shlib.assert.program_exist.bash
+source potpourri.gitlib.assert_all_committed.bash
+source potpourri.gitlib.git_no_sign.bash
 source potpourri.dotfileslib.globalvar.bash
 
 # shellcheck disable=SC2034
@@ -177,14 +180,14 @@ backup() {
 
 update() {
 	shlib.assert.is_user
+	shlib.assert.program_exist git
 
-	if [[ -n $(git status --porcelain --untracked-files=no --ignore-submodules) ]]; then
-		shlib.panic msg="'dotfiles' has uncommitted changes!"
-	fi
+	gitlib.assert_all_committed untracked-files=no ignore-submodules
 
-	if [[ -n $(cd secrets && git status --porcelain) ]]; then
-		shlib.panic msg="'secrets' has uncommitted changes!"
-	fi
+	(
+		cd secrets
+		gitlib.assert_all_committed
+	)
 
 	if git status --porcelain | grep -Eq ' secrets$'; then
 		shlib.console.info "Updating 'secrets' submodule"

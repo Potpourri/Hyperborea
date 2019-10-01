@@ -1,3 +1,4 @@
+DEPS := $(wildcard $(PROJECT_ROOT)/shlib/src/**/*.bash $(PROJECT_ROOT)/git-scripts/src/lib/*.bash)
 LIB_MODULES := src/lib/potpourri.dotfileslib.globalvar.bash
 BIN_MODULES := backup-cmos \
 	backup-junk \
