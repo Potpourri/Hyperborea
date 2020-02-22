@@ -8,6 +8,7 @@ stages:
 
 commit-lint:
   stage: commit-lint
+  interruptible: true
   script:
     - git fetch origin master:master --depth 50
     - >
@@ -18,12 +19,15 @@ commit-lint:
 
 style-lint:
   stage: style-lint
+  interruptible: true
   script: nix-shell --run style-lint
 
 test:
   stage: test
+  interruptible: true
   script: nix-shell --command 'makeall test'
 
 static-analysis:
   stage: static-analysis
+  interruptible: true
   script: nix-shell --run static-analysis
