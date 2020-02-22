@@ -59,6 +59,7 @@
 		"shellcheckrc",
 		"shfmt",
 		// real words:
+		"interruptible",
 		"unmounting",
 		"unshift",
 		"untracked",
