@@ -2,9 +2,7 @@ image: registry.gitlab.com/potpourri1/hyperborea
 
 stages:
   - commit-lint
-  - style-lint
-  - test
-  - static-analysis
+  - code-lint-or-test
 
 commit-lint:
   stage: commit-lint
@@ -18,16 +16,37 @@ commit-lint:
         bashfnx potpourri.gitlib.assert_all_committed'
 
 style-lint:
-  stage: style-lint
+  stage: code-lint-or-test
   interruptible: true
   script: nix-shell --run style-lint
+  rules:
+    - changes:
+      - "*/src/**/*"
+      - "*/makefile"
+      - tools/cfg/hyperborea.mk
+      - tools/style-lint
+      - tools/cfg/cspell.json
 
 test:
-  stage: test
+  stage: code-lint-or-test
   interruptible: true
   script: nix-shell --command 'makeall test'
+  rules:
+    - changes:
+      - "*/src/**/*"
+      - "*/test/**/*"
+      - "*/makefile"
+      - tools/cfg/hyperborea.mk
 
 static-analysis:
-  stage: static-analysis
+  stage: code-lint-or-test
   interruptible: true
   script: nix-shell --run static-analysis
+  rules:
+    - changes:
+      - "*/src/**/*"
+      - "*/makefile"
+      - tools/cfg/hyperborea.mk
+      - tools/static-analysis
+      - .shellcheckrc
+      - tools/cfg/jscpd.json
