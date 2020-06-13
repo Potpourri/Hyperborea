@@ -35,13 +35,13 @@ declare -r IMAGE="$DOCKER_REGISTRY_URL${DOCKER_REGISTRY_USER:?}/$PROJECT_NAME"
 declare -r NIX_VERSION=${NIX_VERSION:-2.2.1}
 
 build() {
-	local tmpDir dockerfile
+	local tmpDir dockerCxt
 
 	tmpDir=$(mktemp -d)
 	cd "$PROJECT_ROOT"
 
-	dockerfile="$(shlib.sys.get_real_scriptdir)/../share/nix-shell2docker/Dockerfile"
-	cp -r "$dockerfile" shell.nix tools/cfg/nix/ "$tmpDir"
+	dockerCxt="$(shlib.sys.get_real_scriptdir)/../share/nix-shell2docker"
+	cp -r "$dockerCxt/Dockerfile" "$dockerCxt/nix-shell-wrapper" tools/cfg/nix/ "$tmpDir"
 	mkdir -p tools/log
 	docker build --tag "$IMAGE" \
 		--build-arg NIX_VERSION="$NIX_VERSION" \
