@@ -2,25 +2,13 @@
 # → https://github.com/target/lorri
 
 let
-  myNixpkgsUrl = https://github.com/NixOS/nixpkgs.git;
-  myNixpkgsRef = "master";
-  myOverlayUrl = https://github.com/Potpourri/dotfiles.git;
-  myOverlayRef = "master";
+  inherit (import ./helper.nix) getPinnedNixpkgs;
+  inherit (import ./const.nix) myNixpkgsUrl myNixpkgsRef myOverlayUrl myOverlayRef;
   # Look here for information about pinning Nixpkgs
   # → https://nixos.wiki/wiki/FAQ/Pinning_Nixpkgs
-  nixpkgsVersion = builtins.fromJSON (builtins.readFile tools/cfg/nix/nixpkgs-version.json);
-  overlayVersion = builtins.fromJSON (builtins.readFile tools/cfg/nix/overlay-version.json);
-  potpourriDotfiles = builtins.fetchGit {
-    inherit (overlayVersion) url rev;
-    ref = myOverlayRef;
-  };
-  # my overlay with latest versions of dependencies
-  potpourriOverlay = import (potpourriDotfiles + "/nixos/nixpkgs/overlays/potpourri-overlay.nix");
-  pinnedPkgs = import (builtins.fetchGit {
-    inherit (nixpkgsVersion) url rev;
-    ref = myNixpkgsRef;
-  }) {
-    overlays = [ potpourriOverlay ];
+  pinnedPkgs = getPinnedNixpkgs {
+    nixpkgsRef = myNixpkgsRef;
+    overlayRef = myOverlayRef;
   };
 in
 
@@ -30,7 +18,7 @@ in
 with pkgs;
 
 stdenv.mkDerivation rec {
-  name = "lorri-shell";
+  name = "Hyperborea-shell";
   phases = [ "nobuildPhase" ];
 
   buildInputs = [
@@ -47,6 +35,7 @@ stdenv.mkDerivation rec {
     cspell
     # runtime dependencies:
     nix-prefetch-git # for update-pinned-nixpkgs
+    git # for git-scripts
     # optional dependencies:
     # -
     # other developing tools:
@@ -56,7 +45,7 @@ stdenv.mkDerivation rec {
     fakeroot # for tests
   ];
 
-  PROJECT_ROOT = toString ./.;
+  PROJECT_ROOT = toString ../../..;
   MY_NIXPKGS_URL = myNixpkgsUrl;
   MY_NIXPKGS_REF = myNixpkgsRef;
   MY_OVERLAY_URL = myOverlayUrl;
