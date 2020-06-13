@@ -9,18 +9,16 @@ commit-lint:
   interruptible: true
   script:
     - git fetch origin master:master --depth 50
-    - >
-      nix-shell --command '
-        commit-lint &&
-        makeall clean build &&
-        bashfnx potpourri.gitlib.assert_all_committed'
+    - commit-lint
+    - makeall clean build
+    - bashfnx potpourri.gitlib.assert_all_committed
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "web"'
 
 style-lint:
   stage: code-lint-or-test
   interruptible: true
-  script: nix-shell --run style-lint
+  script: style-lint
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
       changes:
@@ -34,7 +32,7 @@ style-lint:
 test:
   stage: code-lint-or-test
   interruptible: true
-  script: nix-shell --command 'makeall test'
+  script: makeall test
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
       changes:
@@ -47,7 +45,7 @@ test:
 static-analysis:
   stage: code-lint-or-test
   interruptible: true
-  script: nix-shell --run static-analysis
+  script: static-analysis
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
       changes:
