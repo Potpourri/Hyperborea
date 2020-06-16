@@ -25,6 +25,7 @@ policies:
           - dotfiles-scripts
           - git-scripts
           - hyperborea
+          - makeall
           - media-scripts
           - nix-shell2docker
           - shlib

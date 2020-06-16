@@ -12,6 +12,7 @@ Monorepo for my Bash packages.
 - [[bashfnx/][bashfnx]]
 - [[dotfiles-scripts/][dotfiles-scripts]]
 - [[git-scripts/][git-scripts]]
+- [[makeall/][makeall]]
 - [[media-scripts/][media-scripts]]
 - [[nix-shell2docker/][nix-shell2docker]]
 - [[shlib/][potpourri.shlib]]

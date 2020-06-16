@@ -23,8 +23,10 @@ main() {
 	jscpd --config tools/cfg/jscpd.json \
 		"$PWD/apcselftest/src" \
 		"$PWD/bash-bundler/src" \
+		"$PWD/bashfnx/src" \
 		"$PWD/dotfiles-scripts/src" \
 		"$PWD/git-scripts/src" \
+		"$PWD/makeall/src" \
 		"$PWD/media-scripts/src" \
 		"$PWD/nix-shell2docker/src" \
 		"$PWD/shlib/src" \

@@ -1,0 +1,6 @@
+#+STARTUP: showall
+* makeall
+
+** License
+
+[[../LICENSE][MIT]]
