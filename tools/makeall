@@ -3,24 +3,14 @@ set -o errtrace -o nounset -o pipefail
 
 source potpourri.shlib.panic.__err_exit_trap__.bash
 
-declare -a PROJECTS=(
-	bash-bundler
-	apcselftest
-	bashfnx
-	dotfiles-scripts
-	git-scripts
-	media-scripts
-	nix-shell2docker
-	shlib
-	update-pinned-nixpkgs
-)
-
 main() {
 	local -i exitCode=0
 	local project
 
-	for project in "${PROJECTS[@]}"; do
-		make -C "$project" "$@" || exitCode=$?
+	for project in ./*/; do
+		if [[ -f "$project/Makefile" || -f "$project/makefile" ]]; then
+			make -C "$project" "$@" || exitCode=$?
+		fi
 	done
 
 	exit "$exitCode"
